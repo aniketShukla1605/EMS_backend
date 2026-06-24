@@ -48,7 +48,7 @@ public class EmailOtpController {
         try {
             emailOtpService.sendOtp(email,otp);
         } catch (Exception e) {
-            log.info("Failed to send email");
+            log.info("Failed to send email",e.getMessage(),e);
             return ResponseEntity.status(500).body("failed to send email"+e.getMessage());
         }
 
