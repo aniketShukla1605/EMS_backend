@@ -4,11 +4,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
 
+@Service
 public class EmailService {
     @Value("${brevo.api.key}")
     private String apiKey;
@@ -38,7 +40,7 @@ public class EmailService {
                       <p>Your OTP for verification is below:</p>
                 
                       <h1 style="background:#38bdf8; color:black; padding:10px; text-align:center; border-radius:8px;">
-     
+                        %s
                       </h1>
                 
                       <p>This OTP is valid for 5 minutes.</p>

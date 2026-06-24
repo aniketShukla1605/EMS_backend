@@ -2,11 +2,14 @@ package com.main.EMS_backend.service;
 
 import com.main.EMS_backend.entity.EmailOtp;
 import com.main.EMS_backend.repository.EmailOtpRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+@Service
 public class OtpService {
     private final EmailOtpRepository otpRepository;
     private final EmailService emailService;
@@ -18,6 +21,7 @@ public class OtpService {
         this.emailService = emailService;
     }
 
+    @Transactional
     public void generateAndSendOtp(String email) {
         otpRepository.deleteByEmail(email);
 
@@ -34,6 +38,7 @@ public class OtpService {
         }
     }
 
+    @Transactional
     public boolean verifyOtp(String email, String userProvidedOtp) {
         Optional<EmailOtp> otpOpt = otpRepository.findByEmail(email);
 

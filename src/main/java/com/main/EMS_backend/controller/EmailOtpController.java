@@ -1,12 +1,9 @@
 package com.main.EMS_backend.controller;
 
 import com.main.EMS_backend.dto.OtpRequest;
-import com.main.EMS_backend.repository.EmailOtpRepository;
-import com.main.EMS_backend.repository.UserRepository;
 import com.main.EMS_backend.service.OtpService;
 import jakarta.mail.MessagingException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 //import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -15,12 +12,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/otp")
 @Slf4j
 public class EmailOtpController {
-    @Autowired
-    private EmailOtpRepository emailOtpRepository;
-    @Autowired
-    private UserRepository userRepository;
-    private OtpService otpService;
+    private final OtpService otpService;
 
+    public EmailOtpController(OtpService otpService) {
+        this.otpService = otpService;
+    }
 
     @PostMapping("/send")
     public ResponseEntity<?> sendOtp(@RequestBody OtpRequest request) throws MessagingException {
@@ -28,6 +24,7 @@ public class EmailOtpController {
         try {
             otpService.generateAndSendOtp(request.getEmail());
         } catch (Exception e) {
+            log.error("Failed to send OTP to {}", request.getEmail(), e);
             return ResponseEntity.status(500).body("Failed to send otp");
         }
 
