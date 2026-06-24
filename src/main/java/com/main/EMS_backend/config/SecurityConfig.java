@@ -57,7 +57,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
-                        .requestMatchers("/api/otp/**").permitAll()
+                        .requestMatchers("/otp/**").permitAll()
                         .requestMatchers(HttpMethod.PUT,"/api/profile/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/registrations/organiser-registrations").hasAnyRole("ADMIN","ORGANISER")
                         .requestMatchers(HttpMethod.GET,"/api/registrations/pending-count").hasAnyRole("ADMIN","ORGANISER")
