@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/otp")
+@RequestMapping("/api/otp")
 @Slf4j
 public class EmailOtpController {
     @Autowired
