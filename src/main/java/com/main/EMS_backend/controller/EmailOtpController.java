@@ -6,6 +6,7 @@ import com.main.EMS_backend.entity.User;
 import com.main.EMS_backend.repository.EmailOtpRepository;
 import com.main.EMS_backend.repository.UserRepository;
 import com.main.EMS_backend.service.EmailOtpService;
+import com.main.EMS_backend.service.OtpService;
 import jakarta.mail.MessagingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,30 +27,16 @@ public class EmailOtpController {
     @Autowired
     private EmailOtpService emailOtpService;
     private UserRepository userRepository;
+    private OtpService otpService;
+
 
     @PostMapping("/send")
     public ResponseEntity<?> sendOtp(@RequestBody OtpRequest request) throws MessagingException {
-//        String otp = String.valueOf((int)(Math.random()*9000+1000));
-        String email = request.getEmail();
-
-        log.info("send otp method called"+request.getEmail());
-
-        SecureRandom random = new SecureRandom();
-        int otpInt = 100000 + random.nextInt(900000);
-        String otp = String.valueOf(otpInt);
-        EmailOtp emailOtp = new EmailOtp();
-        emailOtp.setEmail(email);
-        emailOtp.setOtp(otp);
-        emailOtp.setDateTime(LocalDateTime.now().plusMinutes(5));
-
-        emailOtpRepository.save(emailOtp);
-        log.info("OTP saved ");
 
         try {
-            emailOtpService.sendOtp(email,otp);
+            otpService.generateAndSendOtp(request.getEmail());
         } catch (Exception e) {
-            log.info("Failed to send email",e.getMessage(),e);
-            return ResponseEntity.status(500).body("failed to send email"+e.getMessage());
+            return ResponseEntity.status(500).body("Failed to send otp");
         }
 
         return ResponseEntity.ok("OTP sent");
@@ -57,14 +44,9 @@ public class EmailOtpController {
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyOtp(@RequestBody OtpRequest otpRequest) throws MessagingException {
-        Optional<EmailOtp> emailOtp = emailOtpRepository.findByEmailAndOtp(otpRequest.getEmail(),otpRequest.getOtp());
-        if(!emailOtp.isPresent()){
-            return ResponseEntity.badRequest().body("Invalid OTP");
+        if(!otpService.verifyOtp(otpRequest.getEmail(),otpRequest.getOtp())) {
+            return ResponseEntity.status(401).body("Wrong Otp");
         }
-        if(emailOtp.get().getDateTime().isBefore(LocalDateTime.now())){
-            return ResponseEntity.badRequest().body("OTP Expired");
-        }
-
         return ResponseEntity.ok("Email Verified");
     }
 }
