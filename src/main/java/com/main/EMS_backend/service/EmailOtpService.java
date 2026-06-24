@@ -11,7 +11,7 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 @Service
 public class EmailOtpService {
-    @Value("${spring.mail.password}")
+    @Value("${brevo.api.key}")
     private String apiKey;
 
     private final RestTemplate restTemplate = new RestTemplate();
