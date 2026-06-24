@@ -15,9 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -28,10 +25,15 @@ public class EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final EventRegistrationRepository eventRegistrationRepository;
-    public EventService(EventRepository eventRepository, UserRepository userRepository, EventRegistrationRepository eventRegistrationRepository) {
+    private final CloudinaryService cloudinaryService;
+    public EventService(EventRepository eventRepository,
+                        UserRepository userRepository,
+                        EventRegistrationRepository eventRegistrationRepository,
+                        CloudinaryService cloudinaryService) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.eventRegistrationRepository = eventRegistrationRepository;
+        this.cloudinaryService = cloudinaryService;
     }
     @CacheEvict(value = {
             "allEvents",
@@ -104,11 +106,10 @@ public class EventService {
         MultipartFile banner = req.getBanner();
 
         if (banner != null && !banner.isEmpty()) {
-            // handle file
-            String fileName = banner.getOriginalFilename();
-            Path path = Paths.get("uploads/"+fileName);
-            Files.write(path,banner.getBytes());
-            event.setBannerPath(fileName);
+            if (banner.getContentType() == null || !banner.getContentType().startsWith("image/")) {
+                throw new IllegalArgumentException("Upload image only");
+            }
+            event.setBannerPath(cloudinaryService.uploadEventBanner(banner));
         }
         event.setEventName(req.getEventName());
         event.setCategory(req.getCategory());

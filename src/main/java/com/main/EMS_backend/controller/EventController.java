@@ -4,6 +4,7 @@ import com.main.EMS_backend.dto.EventUpdateRequest;
 import com.main.EMS_backend.entity.Event;
 import com.main.EMS_backend.entity.User;
 import com.main.EMS_backend.repository.UserRepository;
+import com.main.EMS_backend.service.CloudinaryService;
 import com.main.EMS_backend.service.EventRegistrationService;
 import com.main.EMS_backend.service.EventService;
 import com.main.EMS_backend.service.RecommendationService;
@@ -14,11 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -28,6 +25,7 @@ import java.util.List;
 @Slf4j
 public class EventController {
     private EventService eventService;
+    private final CloudinaryService cloudinaryService;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -37,8 +35,9 @@ public class EventController {
 
 //    private RecommendationService  recommendationService;
 
-    public EventController(EventService eventService) {
+    public EventController(EventService eventService, CloudinaryService cloudinaryService) {
         this.eventService = eventService;
+        this.cloudinaryService = cloudinaryService;
     }
 
     @PostMapping
@@ -71,15 +70,13 @@ public class EventController {
             return ResponseEntity.status(404).body("User not found");
         }
 
-        String uploadDir = "uploads/";
-        File folder = new File(uploadDir);
-        if (!folder.exists()) {
-            folder.mkdirs();
+        String bannerUrl;
+        try {
+            bannerUrl = cloudinaryService.uploadEventBanner(banner);
+        } catch (RuntimeException ex) {
+            log.error("Cloudinary event banner upload failed for {}", eventName, ex);
+            return ResponseEntity.internalServerError().body("Event banner upload failed");
         }
-
-        String fileName = System.currentTimeMillis() + "_" + banner.getOriginalFilename();
-        Path filePath = Paths.get(uploadDir + fileName);
-        Files.write(filePath, banner.getBytes());
 
         Event event = new Event();
         event.setEventName(eventName);
@@ -88,7 +85,7 @@ public class EventController {
         event.setTime(LocalTime.parse(time));
         event.setCategory(category);
         event.setDescription(description);
-        event.setBannerPath("/uploads/"+fileName);
+        event.setBannerPath(bannerUrl);
 //        event.setCreatedBy(authentication.getName());
         event.setCreatedBy(user);
 
@@ -114,9 +111,16 @@ public class EventController {
             @ModelAttribute EventUpdateRequest request
     ) throws IOException {
 
-        return ResponseEntity.ok(
-                eventService.updateEvent(id, request)
-        );
+        try {
+            return ResponseEntity.ok(
+                    eventService.updateEvent(id, request)
+            );
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            log.error("Event update failed for {}", id, e);
+            return ResponseEntity.internalServerError().body("Event update failed");
+        }
     }
 
     @GetMapping("/{id}")

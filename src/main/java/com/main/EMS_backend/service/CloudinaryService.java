@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +29,21 @@ public class CloudinaryService {
             return (String) result.get("secure_url");
         } catch (IOException e) {
             throw new RuntimeException("Image upload failed: " + e.getMessage());
+        }
+    }
+
+    public String uploadEventBanner(MultipartFile file) {
+        try {
+            Map<?, ?> result = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "public_id", "events/" + UUID.randomUUID(),
+                            "resource_type", "image"
+                    )
+            );
+            return (String) result.get("secure_url");
+        } catch (IOException e) {
+            throw new RuntimeException("Event banner upload failed: " + e.getMessage());
         }
     }
 

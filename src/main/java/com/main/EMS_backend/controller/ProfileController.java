@@ -13,10 +13,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Set;
 
@@ -70,13 +66,8 @@ public class ProfileController {
         try {
             imageUrl = cloudinaryService.uploadAvatar(file, String.valueOf(user.getId()));
         } catch (RuntimeException ex) {
-            log.warn("Cloudinary profile upload failed for user {}. Falling back to local storage.", user.getId(), ex);
-            try {
-                imageUrl = saveProfileImageLocally(file, user.getId());
-            } catch (IOException ioException) {
-                log.error("Local profile upload failed for user {}", user.getId(), ioException);
-                return ResponseEntity.internalServerError().body("Profile image upload failed");
-            }
+            log.error("Cloudinary profile upload failed for user {}", user.getId(), ex);
+            return ResponseEntity.internalServerError().body("Profile image upload failed");
         }
 
         user.setProfilePicture(imageUrl);
@@ -152,29 +143,5 @@ public class ProfileController {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         return ResponseEntity.ok("Password reset successfully");
-    }
-
-    private String saveProfileImageLocally(MultipartFile file, Long userId) throws IOException {
-        Path uploadDir = Paths.get("uploads", "profiles");
-        Files.createDirectories(uploadDir);
-
-        String fileName = userId + "_" + System.currentTimeMillis() + resolveImageExtension(file.getContentType());
-        Path targetPath = uploadDir.resolve(fileName).normalize();
-        Files.copy(file.getInputStream(), targetPath);
-
-        return "/uploads/profiles/" + fileName;
-    }
-
-    private String resolveImageExtension(String contentType) {
-        if ("image/png".equalsIgnoreCase(contentType)) {
-            return ".png";
-        }
-        if ("image/webp".equalsIgnoreCase(contentType)) {
-            return ".webp";
-        }
-        if ("image/gif".equalsIgnoreCase(contentType)) {
-            return ".gif";
-        }
-        return ".jpg";
     }
 }

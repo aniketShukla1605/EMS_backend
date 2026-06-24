@@ -33,9 +33,13 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
-        user.setRole("USER");
-        userService.registerUser(user);
-        return ResponseEntity.ok("User registered successfully");
+        try {
+            user.setRole("USER");
+            userService.registerUser(user);
+            return ResponseEntity.ok("User registered successfully");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/login")

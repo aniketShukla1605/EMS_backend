@@ -25,6 +25,9 @@ public class UserService {
             "dashboardStats"
     }, allEntries = true)
     public void registerUser(User user) {
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Password is required");
+        }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
     }
