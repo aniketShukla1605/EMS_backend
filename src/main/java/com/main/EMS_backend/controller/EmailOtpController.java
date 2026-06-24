@@ -32,6 +32,7 @@ public class EmailOtpController {
 //        String otp = String.valueOf((int)(Math.random()*9000+1000));
         String email = request.getEmail();
 
+        log.info("send otp method called"+request.getEmail());
 
         SecureRandom random = new SecureRandom();
         int otpInt = 100000 + random.nextInt(900000);
@@ -42,8 +43,15 @@ public class EmailOtpController {
         emailOtp.setDateTime(LocalDateTime.now().plusMinutes(5));
 
         emailOtpRepository.save(emailOtp);
+        log.info("OTP saved ");
 
-        emailOtpService.sendOtp(email,otp);
+        try {
+            emailOtpService.sendOtp(email,otp);
+        } catch (Exception e) {
+            log.info("Failed to send email");
+            return ResponseEntity.status(500).body("failed to send email"+e.getMessage());
+        }
+
         return ResponseEntity.ok("OTP sent");
     }
 
