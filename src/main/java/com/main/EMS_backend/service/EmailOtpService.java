@@ -1,38 +1,65 @@
 package com.main.EMS_backend.service;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Service
 public class EmailOtpService {
-    @Value("${brevo.api.key}")
-    private String apiKey;
+    private final JavaMailSender mailSender;
+    private final String fromAddress;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    public EmailOtpService(JavaMailSender mailSender,
+                           @Value("${spring.mail.username}") String fromAddress) {
+        this.mailSender = mailSender;
+        this.fromAddress = fromAddress;
+    }
 
-    public void sendOtp(String email, String otp) {
-        String url = "https://api.brevo.com/v3/smtp/email";
+    public void sendOtp(String email, String otp) throws MessagingException {
+        if (fromAddress == null || fromAddress.isBlank()) {
+            log.info("OTP service threw exception");
+            throw new MessagingException("Mail username is not configured");
+        }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("api-key", apiKey);
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
 
-        String body = """
-            {
-              "sender": {"name": "EventSphere", "email": "your-verified-sender@gmail.com"},
-              "to": [{"email": "%s"}],
-              "subject": "Email Verification OTP",
-              "htmlContent": "<h1>Your OTP is: %s</h1><p>Valid for 5 minutes.</p>"
-            }
-            """.formatted(email, otp);
+        String html = """
+                <html>
+                  <body style="font-family: Arial; background:#0f172a; color:white; padding:20px;">
+                    <div style="max-width:500px; margin:auto; background:#1e293b; padding:20px; border-radius:10px;">
+                
+                      <h2 style="color:#38bdf8;">EventSphere</h2>
+                
+                      <p>Hello,</p>
+                
+                      <p>Your OTP for verification is:</p>
+                
+                      <h1 style="background:#38bdf8; color:black; padding:10px; text-align:center; border-radius:8px;">
+                """ + otp + """
+                      </h1>
+                
+                      <p>This OTP is valid for 5 minutes.</p>
+                
+                      <p style="font-size:12px; color:gray;">
+                        If you didn't request this, ignore this email.
+                      </p>
+                
+                    </div>
+                  </body>
+                </html>
+                """;
 
-        HttpEntity<String> request = new HttpEntity<>(body, headers);
-        restTemplate.postForEntity(url, request, String.class);
+        helper.setFrom(fromAddress);
+        helper.setTo(email);
+        helper.setSubject("Email verification OTP");
+        helper.setText(html, true);
+        log.info("Email set in helper");
+        mailSender.send(mimeMessage);
     }
 }
