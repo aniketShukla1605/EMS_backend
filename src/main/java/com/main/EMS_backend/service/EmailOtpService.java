@@ -2,11 +2,13 @@ package com.main.EMS_backend.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class EmailOtpService {
     private final JavaMailSender mailSender;
@@ -20,6 +22,7 @@ public class EmailOtpService {
 
     public void sendOtp(String email, String otp) throws MessagingException {
         if (fromAddress == null || fromAddress.isBlank()) {
+            log.info("OTP service threw exception");
             throw new MessagingException("Mail username is not configured");
         }
 
@@ -56,6 +59,7 @@ public class EmailOtpService {
         helper.setTo(email);
         helper.setSubject("Email verification OTP");
         helper.setText(html, true);
+        log.info("Email set in helper");
         mailSender.send(mimeMessage);
     }
 }
